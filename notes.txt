@@ -1,0 +1,6 @@
+docker run -d \
+  --name mariadb-dev \
+  -e MYSQL_ROOT_PASSWORD=root \
+  -e MYSQL_DATABASE=weatherdb \
+  -p 3306:3306 \
+  mariadb:11
