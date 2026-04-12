@@ -23,14 +23,15 @@ public class WeatherService {
 
     public WeatherResponse getWeather(String city) {
 
+        city = city.toLowerCase().trim();
+
         // 1. Buscar en cache
         WeatherCache cached = repository.findByCity(city).orElse(null);
 
+        // 2. CACHE HIT (TTL válido)
         if (cached != null &&
                 cached.getFetchedAt().isAfter(LocalDateTime.now().minusMinutes(10))) {
-
-            System.out.println("CACHE HIT");
-
+            System.out.println("⚡ CACHE HIT");
             WeatherResponse response = new WeatherResponse();
             CurrentWeather cw = new CurrentWeather();
             cw.setTemperature(cached.getTemperature());
@@ -39,22 +40,37 @@ public class WeatherService {
             return response;
         }
 
-        // 3. API externa
-        System.out.println("API CALL");
+        // 3. Intentar API
+        try {
+            System.out.println("🌐 API CALL");
 
-        WeatherResponse response = weatherClient.getWeather(city);
+            WeatherResponse response = weatherClient.getWeather(city);
+            // 4. Guardar (update o insert)
+            WeatherCache entityToSave = (cached != null) ? cached : new WeatherCache();
 
-        // 4. Guardar en DB (¡Aquí está el truco!)
-        // Si 'cached' no es null, usamos ese mismo objeto. Si es null, creamos uno nuevo.
-        WeatherCache entityToSave = (cached != null) ? cached : new WeatherCache();
+            entityToSave.setCity(city);
+            entityToSave.setTemperature(response.getCurrent_weather().getTemperature());
+            entityToSave.setFetchedAt(LocalDateTime.now());
+            repository.save(entityToSave);
+            return response;
 
-        // 4. Guardar en DB
-        entityToSave.setCity(city);
-        entityToSave.setTemperature(response.getCurrent_weather().getTemperature());
-        entityToSave.setFetchedAt(LocalDateTime.now());
+        } catch (Exception e) {
 
-        repository.save(entityToSave); // Si tenía ID, hará UPDATE. Si no, INSERT.
+            System.out.println("❌ API FAILED → fallback");
 
-        return response;
+            // 5. Fallback → usar cache aunque esté expirado
+            if (cached != null) {
+                System.out.println("⚡ RETURNING OLD CACHE");
+                WeatherResponse response = new WeatherResponse();
+                CurrentWeather cw = new CurrentWeather();
+                cw.setTemperature(cached.getTemperature());
+                response.setCurrent_weather(cw);
+
+                return response;
+            }
+
+            // 6. Nada disponible
+            throw new RuntimeException("Weather service unavailable and no cache found");
+        }
     }
 }
