@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(
+        name = "weather_cache",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"city"})
+)
 public class WeatherCache {
 
     @Id

@@ -5,6 +5,7 @@ import com.example.apiscurrency.currency.dto.CurrencyResponse;
 import com.example.apiscurrency.currency.model.CurrencyCache;
 import com.example.apiscurrency.currency.repository.CurrencyRepository;
 
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -14,10 +15,12 @@ public class CurrencyService {
 
     private final CurrencyRepository repository;
     private final CurrencyClient client;
+    private final StringRedisTemplate redisTemplate;
 
-    public CurrencyService(CurrencyRepository repository, CurrencyClient client) {
+    public CurrencyService(CurrencyRepository repository, CurrencyClient client, StringRedisTemplate redisTemplate) {
         this.repository = repository;
         this.client = client;
+        this.redisTemplate = redisTemplate;
     }
 
     public CurrencyResponse getRate(String from, String to) {
@@ -25,27 +28,53 @@ public class CurrencyService {
         from = from.toUpperCase().trim();
         to = to.toUpperCase().trim();
 
-        CurrencyCache cached = repository
-                .findByFromCurrencyAndToCurrency(from, to)
-                .orElse(null);
+        String key = "currency:" + from + ":" + to;
 
-        // 🔹 CACHE HIT (TTL 10 min)
+        // 1. REDIS
+        String cachedRedis = redisTemplate.opsForValue().get(key);
+
+        if (cachedRedis != null) {
+            System.out.println("⚡ REDIS HIT");
+
+            CurrencyResponse response = new CurrencyResponse();
+            response.setFrom(from);
+            response.setTo(to);
+            response.setRate(Double.parseDouble(cachedRedis));
+
+            return response;
+        }
+
+        // 2. DB
+        CurrencyCache cached = repository.findByFromCurrencyAndToCurrency(from, to).orElse(null);
+
         if (cached != null &&
                 cached.getFetchedAt().isAfter(LocalDateTime.now().minusMinutes(10))) {
 
-            System.out.println("⚡ CURRENCY CACHE HIT");
+            System.out.println("⚡ DB CACHE HIT");
 
-            return buildResponse(from, to, cached.getRate());
+            CurrencyResponse response = new CurrencyResponse();
+            response.setFrom(from);
+            response.setTo(to);
+            response.setRate(cached.getRate());
+
+            return response;
         }
 
-        // 🔹 API CALL
+        // 3. API
         try {
-            System.out.println("🌐 CURRENCY API CALL");
+            System.out.println("🌐 API CALL");
 
             double rate = client.getRate(from, to);
 
-            CurrencyCache entity = (cached != null) ? cached : new CurrencyCache();
+            // 4. REDIS
+            redisTemplate.opsForValue().set(
+                    key,
+                    String.valueOf(rate),
+                    java.time.Duration.ofMinutes(10)
+            );
 
+            // 5. DB
+            CurrencyCache entity = (cached != null) ? cached : new CurrencyCache();
             entity.setFromCurrency(from);
             entity.setToCurrency(to);
             entity.setRate(rate);
@@ -53,15 +82,26 @@ public class CurrencyService {
 
             repository.save(entity);
 
-            return buildResponse(from, to, rate);
+            CurrencyResponse response = new CurrencyResponse();
+            response.setFrom(from);
+            response.setTo(to);
+            response.setRate(rate);
+
+            return response;
 
         } catch (Exception e) {
 
-            System.out.println("❌ CURRENCY API FAILED → fallback");
+            System.out.println("❌ API FAILED → fallback");
 
             if (cached != null) {
-                System.out.println("⚡ RETURNING OLD CURRENCY CACHE");
-                return buildResponse(from, to, cached.getRate());
+                System.out.println("⚡ RETURNING OLD DB CACHE");
+
+                CurrencyResponse response = new CurrencyResponse();
+                response.setFrom(from);
+                response.setTo(to);
+                response.setRate(cached.getRate());
+
+                return response;
             }
 
             throw new RuntimeException("Currency service unavailable and no cache found");

@@ -4,13 +4,18 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(
+        name = "currency_cache",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"fromCurrency", "toCurrency"})
+)
 public class CurrencyCache {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    @Column(nullable = false)
     private String fromCurrency;
+    @Column(nullable = false)
     private String toCurrency;
     private double rate;
     private LocalDateTime fetchedAt;

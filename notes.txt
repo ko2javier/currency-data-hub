@@ -4,3 +4,20 @@ docker run -d \
   -e MYSQL_DATABASE=weatherdb \
   -p 3306:3306 \
   mariadb:11
+
+
+
+ como acceder a reddis
+ redis-cli -h tramway.proxy.rlwy.net -p 49800 -a lGZOxJdQZZuXXCjUGMrnNgDQdApUEDnQ
+ -- keys *
+
+  Para ver las ciudades APIs
+  http://localhost:7000/weather/Valladolid
+
+  Swagger
+  http://localhost:7000/swagger-ui/index.html
+
+
+  🔐 AUTH SERVICE        → 4000
+  🌐 API (weather/currency) → 5000
+  🚪 GATEWAY            → 7000
