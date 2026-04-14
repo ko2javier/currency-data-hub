@@ -16,8 +16,8 @@ public class WeatherController {
 
     @Operation(summary = "Get weather by city")
     // 🔥 Solo los usuarios con ROLE_USER (o ADMIN) pueden pedir el clima normal
-    //@PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    //@PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{city}")
     public WeatherResponse getWeather(@PathVariable String city) {
         return weatherService.getWeather(city);
