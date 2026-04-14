@@ -15,7 +15,8 @@ docker run -d \
   http://localhost:7000/weather/Valladolid
 
   Swagger
-  http://localhost:7000/swagger-ui/index.html
+  http://localhost:5000/swagger-ui/index.html
+  http://localhost:7000/webjars/swagger-ui/index.html
 
 
   🔐 AUTH SERVICE        → 4000
