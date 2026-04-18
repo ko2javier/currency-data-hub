@@ -8,7 +8,11 @@ import com.example.apiscurrency.currency.repository.CurrencyRepository;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class CurrencyService {
@@ -105,6 +109,30 @@ public class CurrencyService {
             }
 
             throw new RuntimeException("Currency service unavailable and no cache found");
+        }
+    }
+
+    public List<String> getAvailableCurrencies() {
+        String redisKey = "currency:available";
+        String cached = redisTemplate.opsForValue().get(redisKey);
+
+        if (cached != null) {
+            System.out.println("⚡ REDIS HIT (available currencies)");
+            return Arrays.asList(cached.split(","));
+        }
+
+        try {
+            System.out.println("🌐 API CALL (available currencies)");
+            List<String> currencies = client.getAvailableCurrencies();
+            redisTemplate.opsForValue().set(redisKey, String.join(",", currencies), Duration.ofHours(1));
+            return currencies;
+        } catch (Exception e) {
+            System.out.println("❌ API FAILED → fallback (available currencies)");
+            return repository.findAll().stream()
+                    .map(CurrencyCache::getFromCurrency)
+                    .distinct()
+                    .sorted()
+                    .collect(Collectors.toList());
         }
     }
 

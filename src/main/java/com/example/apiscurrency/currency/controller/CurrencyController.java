@@ -5,6 +5,8 @@ import com.example.apiscurrency.currency.service.CurrencyService;
 
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/currency")
 public class CurrencyController {
@@ -13,6 +15,11 @@ public class CurrencyController {
 
     public CurrencyController(CurrencyService service) {
         this.service = service;
+    }
+
+    @GetMapping("/rates")
+    public List<String> getAvailableCurrencies() {
+        return service.getAvailableCurrencies();
     }
 
     @GetMapping("/{from}/{to}")
