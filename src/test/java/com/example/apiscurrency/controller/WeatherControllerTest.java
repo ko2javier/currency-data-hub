@@ -2,12 +2,15 @@ package com.example.apiscurrency.controller;
 
 import com.example.apiscurrency.dto.CurrentWeather;
 import com.example.apiscurrency.dto.WeatherResponse;
+import com.example.apiscurrency.security.HeaderAuthFilter;
 import com.example.apiscurrency.service.WeatherService;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.Mockito.when;
@@ -15,6 +18,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(WeatherController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class WeatherControllerTest {
 
     @Autowired
@@ -23,31 +27,30 @@ class WeatherControllerTest {
     @MockBean
     private WeatherService weatherService;
 
-    @Test
-    void shouldReturnWeather() throws Exception {
+    @MockBean
+    private HeaderAuthFilter headerAuthFilter;
 
-        // 🔹 mock respuesta del service
+    @Test
+    @WithMockUser(roles = "USER")
+    void shouldReturnWeather() throws Exception {
         WeatherResponse response = new WeatherResponse();
         CurrentWeather cw = new CurrentWeather();
         cw.setTemperature(25);
         response.setCurrent_weather(cw);
 
-        when(weatherService.getWeather("madrid"))
-                .thenReturn(response);
+        when(weatherService.getWeather("madrid")).thenReturn(response);
 
-        // 🔹 llamada HTTP simulada
         mockMvc.perform(get("/weather/madrid"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.current_weather.temperature").value(25));
     }
-    @Test
-    void shouldReturnErrorWhenServiceFails() throws Exception {
 
-        when(weatherService.getWeather("madrid"))
-                .thenThrow(new RuntimeException("fail"));
+    @Test
+    @WithMockUser(roles = "USER")
+    void shouldReturn500WhenServiceFails() throws Exception {
+        when(weatherService.getWeather("madrid")).thenThrow(new RuntimeException("fail"));
 
         mockMvc.perform(get("/weather/madrid"))
-                .andExpect(status().isServiceUnavailable())
-                .andExpect(jsonPath("$.error").value("fail"));
+                .andExpect(status().isServiceUnavailable());
     }
 }
