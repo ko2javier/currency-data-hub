@@ -20,5 +20,5 @@ jobs:
             cd ~/server-infrastructure/portfolio-backend/currency-data-hub
             git pull
             cd ..
-            docker compose rm -f api-service
-            docker compose up --build -d api-service
+            docker-compose rm -f api-service
+            docker-compose up --build -d api-service
