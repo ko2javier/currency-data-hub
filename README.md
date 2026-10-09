@@ -46,7 +46,7 @@ All requests go through the Gateway at `api.ko2-oreilly.com`. Authentication is 
 | Runtime | Java 21 |
 | Framework | Spring Boot 3.3.5 |
 | Persistence | Spring Data JPA + MySQL (Aiven) |
-| Cache | Redis (Railway) |
+| Cache | Redis 7.2 (self-hosted, same Docker network) |
 | External APIs | Open-Meteo (weather), open.er-api.com (currency) |
 | Docs | SpringDoc OpenAPI 3 (Swagger UI) |
 | Tests | JUnit 5 + Mockito — 15 tests, 50% instruction coverage (JaCoCo) |
