@@ -21,14 +21,25 @@ public class OpenApiConfig {
                         .info(new Info()
                                 .title("Currency & Weather API")
                                 .version("1.0")
-                                .description("API Documentación"))
+                                .description("""
+                                        **Every endpoint below needs a JWT.** Getting one takes four steps:
+
+                                        1. In the **definition selector at the top right**, switch to **Auth Service**.
+                                        2. Run `POST /auth/login` with `{ "username": "user", "password": "user123" }`.
+                                        3. Copy the `token` value out of the response.
+                                        4. Come back to this definition, click **Authorize**, and paste the token                                         *without* the `Bearer` prefix.
+
+                                        Demo accounts: `user` / `user123` (ROLE_USER) and `admin` / `admin123` (ROLE_ADMIN).
+
+                                        Weather and currency data comes out of a four-level cache: Redis, then MySQL,                                         then the upstream API, falling back to the stale MySQL row if the upstream is down.                                         A repeated query is served from Redis in under a millisecond.
+                                        """))
                         .addServersItem(new Server()
                                 .url(gatewayUrl)
                                 .description("API Gateway"))
                         .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
                         .schemaRequirement("bearerAuth", new SecurityScheme()
                                 .name("bearerAuth")
-                                .description("Mete tu token JWT aquí (sin la palabra Bearer)")
+                                .description("Paste the JWT from POST /auth/login here, without the \"Bearer \" prefix.")
                                 .type(SecurityScheme.Type.HTTP)
                                 .scheme("bearer")
                                 .bearerFormat("JWT"));
