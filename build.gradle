@@ -23,6 +23,19 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     // para los test de jUnit
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // Tests de integracion (2026-10-18): un MySQL y un Redis de verdad en
+    // contenedores. Las versiones las fija el BOM de Spring Boot. Kafka NO va:
+    // este servicio solo produce eventos (no hay ningun @KafkaListener), asi
+    // que el contexto arranca sin broker, y en los tests el productor se
+    // sustituye por un doble.
+    testImplementation 'org.testcontainers:testcontainers'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:mysql'
+    // Cliente HTTP de los tests. Sin esto, TestRestTemplate usa
+    // HttpURLConnection del JDK, que no puede reintentar un POST tras un 401 y
+    // se queda colgado. Con Apache HttpClient en el classpath, Spring Boot lo
+    // elige solo. La version la fija el BOM.
+    testImplementation 'org.apache.httpcomponents.client5:httpclient5'
     testImplementation 'org.mockito:mockito-core:5.12.0'
     testImplementation 'org.springframework.security:spring-security-test'
 

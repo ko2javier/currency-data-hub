@@ -1,5 +1,6 @@
 package com.example.apiscurrency.currency.controller;
 
+import com.example.apiscurrency.kafka.KafkaEventProducer;
 import com.example.apiscurrency.currency.dto.CurrencyResponse;
 import com.example.apiscurrency.currency.service.CurrencyService;
 import com.example.apiscurrency.security.HeaderAuthFilter;
@@ -28,6 +29,14 @@ class CurrencyControllerTest {
 
     @MockBean
     private HeaderAuthFilter headerAuthFilter;
+
+    // FALTABA, y es lo que ponia en rojo los dos tests de esta clase desde
+    // que el controlador empezo a publicar eventos: @WebMvcTest construye el
+    // controlador de verdad, asi que necesita un doble de CADA dependencia
+    // suya, y CurrencyController pide CurrencyService y KafkaEventProducer.
+    // Sin esta linea: NoSuchBeanDefinitionException al cargar el contexto.
+    @MockBean
+    private KafkaEventProducer kafkaEventProducer;
 
     @Test
     @WithMockUser
